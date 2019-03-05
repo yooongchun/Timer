@@ -1,5 +1,6 @@
 Qt项目计时器
 
+软件下载地址：博主个人博客资源栏下[简易项目计时器] http://www.yooongchun.cn/resource/1/
 ---
 
 ## 应用介绍
