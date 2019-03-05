@@ -231,12 +231,12 @@ void Timer::update_to_proj() {
 	proj.name=ui.project_name->text().toStdString();
 	proj.author = ui.author->text().toStdString();
 	std::string d=ui.detail->text().toStdString();
-	std::string now=[]()->std::string {char tmp[64]; time_t now = time(0); strftime(tmp, sizeof(tmp), "%y-%m-%d %H:%M:%S", localtime(&now)); return tmp; }();
+	time_t now=time(0);
 	if (proj.workTimeList.count(d) == 1) {
 		proj.workTimeList[d].first += proj.totalTime-proj.preTime;
 	}
 	else {
-		proj.workTimeList[d] = make_pair(proj.totalTime-proj.preTime,now);
+		proj.workTimeList[d] = std::make_pair(proj.totalTime-proj.preTime,now);
 	}
 	proj.preTime = proj.totalTime;
 	
@@ -246,32 +246,45 @@ void Timer::update_to_ui() {
 	ui.project_name->setText(QString::fromStdString(proj.name));
 	ui.author->setText(QString::fromStdString(proj.author));
 	ui.log->setText("");
-	std::unordered_map<std::string, std::pair<unsigned long, std::string>>::iterator it = proj.workTimeList.begin();
-	for (; it != proj.workTimeList.end(); it++){
-		std::string s = it->second.second + "  " + std::to_string(it->second.first) +"s  "+ it->first;
+	std::unordered_map<std::string, std::pair<unsigned long, time_t>>::iterator it = proj.workTimeList.begin();
+	std::vector<P> vec;
+	for (; it != proj.workTimeList.end(); it++)
+		vec.push_back(*it);
+	std::sort(vec.begin(), vec.end(), [](P p1, P p2)->bool {return p1.second.second < p2.second.second; });
+	for (int i = 0; i < vec.size(); i++){
+		std::string s = time_stamp_to_str(vec[i].second.second) + "  " + std::to_string(vec[i].second.first/3600.0) +"h  "+ vec[i].first;
 		ui.log->append(QString::fromStdString(s));
 	}
-	
 	onTimeOut();
+}
+
+std::string Timer::time_stamp_to_str(time_t now) {
+	char tmp[64];
+	strftime(tmp, sizeof(tmp), "%y-%m-%d %H:%M:%S", localtime(&(now)));
+	return tmp;
 }
 
 void Timer::export_data() {
 	QString path = QFileDialog().getExistingDirectory(this, tr("action"), "选择导出文件夹");
 	std::ofstream out(path.toStdString()+"/"+proj.name+".csv",std::ios::out);
 	if (out) {
-		std::unordered_map<std::string, std::pair<unsigned long, std::string>>::iterator it = proj.workTimeList.begin();
 		char utfBomHeader[4];
 		utfBomHeader[0] = 0xEF;
 		utfBomHeader[1] = 0xBB;
 		utfBomHeader[2] = 0xBF;
 		utfBomHeader[3] = '\0';
 		out << utfBomHeader;
-		out << "开始时间,持续时间(秒),工作备注" << std::endl;
+		out << "开始,时间(h),备注" << std::endl;
+		std::unordered_map<std::string, std::pair<unsigned long, time_t>>::iterator it = proj.workTimeList.begin();
+		std::vector<P> vec;
 		for (; it != proj.workTimeList.end(); it++)
-			out<<it->second.second+","+std::to_string(it->second.first)+","+it->first<<std::endl;
-		out<<"合计,"<<(double)proj.totalTime / 3600<<" 小时,"<<(double)proj.totalTime/3600/24<<" 天";
+			vec.push_back(*it);
+		std::sort(vec.begin(), vec.end(), [](P p1, P p2)->bool {return p1.second.second < p2.second.second; });
+		for(int i=0;i<vec.size();i++)
+			out<< time_stamp_to_str(vec[i].second.second) +","+std::to_string(vec[i].second.first/3600.0)+","+vec[i].first<<std::endl;
+		out<<"合计,"<<(double)proj.totalTime / 3600<<" 小时,"<<(double)proj.totalTime/3600/8<<" 天";
 		out.close();
-		ui.log->append("完成！");
+		ui.log->append("保存完成！");
 	}
 	else ui.log->append("无法导出数据");
 }

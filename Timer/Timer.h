@@ -15,7 +15,6 @@
 #include<thread>
 #include<chrono>
 #include<unordered_map>
-#include<vector>
 #include<algorithm>
 #include<direct.h>
 #include <windows.h>
@@ -41,13 +40,14 @@ public:
 		std::string name = "";
 		std::string author = "";
 		std::string startTime = []()->std::string {char tmp[64]; time_t now = time(0); strftime(tmp, sizeof(tmp), "%y-%m-%d %H:%M:%S", localtime(&now)); return tmp; }();
-		std::unordered_map <std::string, std::pair<unsigned long, std::string>> workTimeList;//detail-lastTime-startTime
+		std::unordered_map <std::string, std::pair<unsigned long, time_t>> workTimeList;//detail-lastTime-startTime
 		friend class boost::serialization::access;
 		template <typename Archive>
 		friend void serialize(Archive &ar, Project &p, const unsigned int version);
 	};
 private:
 	Project proj;
+	typedef std::pair<std::string, std::pair<unsigned long, time_t>> P;
 	std::string baseDir = []()->std::string {CHAR my_documents[MAX_PATH];HRESULT result = SHGetFolderPathA(NULL, CSIDL_PERSONAL, NULL, SHGFP_TYPE_CURRENT, my_documents);if (result != S_OK)return "";else {std::string path = (std::string)(char*)my_documents + "/timer";int res = _mkdir((char*)path.c_str());return path;}}();
 	std::string settingFile = baseDir + "/timer.setting";
 	QTimer *pTimer = new QTimer(this);
@@ -71,6 +71,7 @@ private:
 	void setBtnState(Name n);
 	void update_to_proj();
 	void update_to_ui();
+	std::string time_stamp_to_str(time_t now);
 
 private slots:
 	int StartBtnClick();
