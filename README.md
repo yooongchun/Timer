@@ -1,8 +1,5 @@
 Qt项目计时器
 
-软件下载地址：博主个人博客资源栏下[简易项目计时器] http://www.yooongchun.cn/resource/1/
----
-
 ## 应用介绍
 
 本文介绍一个在`Windows10` 平台下使用`Virsual Studio2017`+`Qt5.12.1`开发的项目计时器，应用界面如下
